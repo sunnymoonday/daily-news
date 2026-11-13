@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>오늘의 주요기사</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: 한 화면 2×2 분야판(스크롤 없음) → 분야를 누르면 기사 전체를 읽는 상세 화면 */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --ink:#18202b; --muted:#5b6574; --line:#dde1e7; --hi:#eef1f6;
+  --eco:#0f7a6c; --sisa:#b4372f; --estate:#a86410; --policy:#3b4fb0;
+  --display:"Gowun Batang","Noto Serif KR",serif;
+  --body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11151b; --surface:#191f27; --ink:#e7ebf0; --muted:#9aa4b2; --line:#2a323d; --hi:#222a35;
+  --eco:#4cc2b0; --sisa:#ee7a70; --estate:#e3a54c; --policy:#8f9ff0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151b; --surface:#191f27; --ink:#e7ebf0; --muted:#9aa4b2; --line:#2a323d; --hi:#222a35;
+  --eco:#4cc2b0; --sisa:#ee7a70; --estate:#e3a54c; --policy:#8f9ff0; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6}
+html.ov body{overflow:hidden}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--policy);outline-offset:2px;border-radius:4px}
+.pad{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* ── 전체 화면 ── */
+#overview{height:100%;display:flex;flex-direction:column;max-width:1280px;margin:0 auto;padding-block:14px}
+.bar{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.bar h1{font-family:var(--display);font-size:clamp(22px,3vw,30px);margin:0;line-height:1.2}
+.date{font-family:var(--mono);font-size:13px;letter-spacing:.06em;color:var(--muted)}
+.bar .hint{margin-left:auto;font-size:13px;color:var(--muted)}
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:12px}
+.card{min-height:0;min-width:0;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--c);border-radius:10px;padding:14px 18px 12px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.card:hover{box-shadow:0 2px 14px rgba(20,30,50,.08);border-color:var(--c)}
+.card-head{display:flex;align-items:baseline;gap:8px}
+.card-head h2{font-family:var(--display);font-size:21px;margin:0;color:var(--c)}
+.card-head .n{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.card-head .go{margin-left:auto;font-size:13px;font-weight:600;color:var(--c);text-decoration:none;white-space:nowrap}
+.lead{display:block;text-decoration:none;margin-top:8px}
+.lead h3{font-family:var(--display);font-size:clamp(17px,1.8vw,20px);line-height:1.4;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lead p{margin:4px 0 0;font-size:14px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.heads{flex:1;min-height:0;overflow:hidden;list-style:none;margin:10px 0 0;padding:8px 0 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:5px}
+.heads a{display:block;text-decoration:none;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.heads a::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--c);margin-right:8px;vertical-align:middle}
+.heads a:hover,.lead:hover h3{text-decoration:underline;text-underline-offset:3px}
+.more{font-size:12.5px;color:var(--muted);padding-top:6px}
+@media (max-width:720px){
+  .grid{grid-template-columns:1fr;grid-template-rows:repeat(4,1fr);gap:8px}
+  .card{padding:10px 14px 8px}
+  .card-head h2{font-size:18px}
+  .lead{margin-top:4px}
+  .lead p,.bar .hint{display:none}
+  .heads{margin-top:6px;padding-top:6px}
+}
+@media (max-height:640px) and (min-width:721px){.lead p{display:none}}
+
+/* ── 상세 화면 ── */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.dbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.dbar-in{max-width:880px;margin:0 auto;display:flex;align-items:center;gap:6px;padding-block:10px;overflow-x:auto;scrollbar-width:none}
+.btn{flex:none;font:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 14px;border-radius:999px;cursor:pointer;text-decoration:none}
+.btn.back{font-weight:600}
+.btn[aria-current="page"]{background:var(--c);border-color:var(--c);color:var(--bg)}
+.sep{flex:none;width:1px;height:20px;background:var(--line);margin:0 4px}
+.dmain{max-width:880px;margin:0 auto;padding-block:24px 56px}
+.dhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.dhead h2{font-family:var(--display);font-size:clamp(28px,4vw,36px);margin:0;color:var(--c)}
+.dhead span{color:var(--muted);font-size:14px}
+.items{display:flex;flex-direction:column;gap:12px}
+article{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px;display:flex;flex-direction:column;gap:8px;scroll-margin-top:72px;transition:background .6s}
+article.top{border-top:3px solid var(--c)}
+article.focus{background:var(--hi);border-color:var(--c)}
+article h3{font-family:var(--display);font-size:20px;line-height:1.45;margin:0;text-wrap:balance}
+article.top h3{font-size:24px}
+article p{margin:0;color:var(--muted);max-width:65ch}
+.meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;align-items:baseline}
+.tag{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.meta a{color:var(--c);font-weight:600;text-decoration:none}
+.meta a:hover{text-decoration:underline}
+.dfoot{margin-top:28px;color:var(--muted);font-size:13px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div id="overview" class="pad">
+  <div class="bar">
+    <h1>오늘의 주요기사</h1>
+    <span class="date" id="date"></span>
+    <span class="hint">분야나 기사 제목을 누르면 상세 화면으로 이동합니다</span>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<div id="detail" hidden>
+  <div class="dbar"><div class="dbar-in pad" id="dnav"></div></div>
+  <main class="dmain pad" id="dmain"></main>
+</div>
+
+<script id="news" type="application/json">
+{
+ "date":"2026-11-13","weekday":"금","updated":"2026-11-13 오전",
+ "sections":[
+  {"id":"economy","name":"경제","color":"--eco","items":[
+   {"title":"젠슨 황 엔비디아 CEO 전격 사임…주가 장중 14% 폭락 후 4%대 하락 마감","summary":"엔비디아는 12일(현지시간) 황 CEO가 즉시 물러나고 콜레트 크레스 CFO가 임시 CEO를 맡는다고 밝혔습니다. AMD·브로드컴은 5%대 올랐습니다.","source":"한국일보","url":"https://www.hankookilbo.com/news/article/A2026111307300002531"},
+   {"title":"코스피, 반도체주 '긴장'…유가·미 국채금리 상승도 부담","summary":"SK하이닉스 ADR이 3% 넘게 내렸습니다. 17일 엔비디아 실적 발표까지 변동성이 커질 수 있다는 분석입니다.","source":"시사저널e","url":"https://www.sisajournal-e.com/news/articleView.html?idxno=424999"},
+   {"title":"10월 수출물량 43.9% 급증…반도체 호조에 증가율 역대 최고","summary":"한국은행 집계로 컴퓨터·전자·광학기기 수출물량이 51.2% 늘어 증가세를 이끌었습니다. 전월 대비로는 6.6% 낮아졌습니다.","source":"뉴스핌","url":"https://www.newspim.com/news/view/20261112001262"},
+   {"title":"삼성전자, 온양에 6조 HBM 패키징 공장 착공…2029년 가동 목표","summary":"충청권 메가프로젝트의 하나로 HBM 전용 클린룸을 짓습니다. 이재용 회장은 '최첨단 HBM 거점'으로 키우겠다고 밝혔습니다.","source":"인더뉴스","url":"https://www.inthenews.co.kr/news/article.html?no=94452"},
+   {"title":"오늘의 투자전략: 엔비디아 불확실성 진정에도 보합권 전망","summary":"엔비디아 공급사에 일시적 매도 압력은 있지만 업황 추세가 꺾인 것은 아니라는 증권가 시각입니다.","source":"이투데이","url":"https://www.etoday.co.kr/news/view/2647679"}
+  ]},
+  {"id":"current","name":"시사","color":"--sisa","items":[
+   {"title":"법원 \"고려아연, 영풍·MBK 의결권 제한한 주총 결의 취소\"…고려아연 즉시 항소","summary":"서울중앙지법은 경영권 방어 목적으로 상호주 규정을 적용해 주주 의결권을 제한할 수 없다고 판단했습니다. 1심 판결입니다.","source":"파이낸셜뉴스","url":"https://www.fnnews.com/news/202611121905436854"},
+   {"title":"이 대통령, 아세안·APEC 정상회의 참석…AI·공급망 협력 제안","summary":"마닐라와 선전을 차례로 방문해 정상회의 일정을 소화합니다.","source":"정책브리핑","url":"https://www.korea.kr/news/policyNewsView.do?newsId=148975598"},
+   {"title":"젠슨 황 퇴진 배경은 잇단 스캔들…이사회 '사임' 표현에도 사실상 해임 해석","summary":"혼외관계 보도가 이어지며 33년 만에 CEO직에서 물러났습니다.","source":"인사이트","url":"https://www.insight.co.kr/news/581839"},
+   {"title":"이 대통령 \"자본시장 개혁 속도…지방이 국가경제 발전의 주역 돼야\"","summary":"수석보좌관회의에서 자본시장 개혁과 지방재정 자율성 확대를 주문했습니다.","source":"정책브리핑","url":"https://www.korea.kr/news/policyNewsView.do?newsId=148975614"}
+  ]},
+  {"id":"estate","name":"부동산","color":"--estate","items":[
+   {"title":"내년 전셋값 4.5%↑, 매매 2%↑…전세 상승률이 매매의 두 배","summary":"한국건설산업연구원은 신규 입주 물량 감소와 실거주 중심 재편을 전세 상승 요인으로 꼽았습니다.","source":"뉴스1","url":"https://www.news1.kr/realestate/general/6351841"},
+   {"title":"\"빌라 전셋값 1억 뛰었다\"…실거주 중심 종부세 개편, 여당서도 추가 수정론","summary":"정부안은 실거주 1주택자 기본공제를 12억→14억원으로 올립니다. 비거주 1주택자도 14억원으로 맞추자는 의견이 나옵니다.","source":"머니투데이","url":"https://www.mt.co.kr/amp/economy/2026/11/09/2026110819462134702"},
+   {"title":"11월 전국 아파트 4만4358가구 분양…일반분양 전년보다 95% 급증","summary":"60개 단지가 분양 예정이고 지방 물량이 약 55%입니다. 서울은 디에이치반포124 등 6605가구입니다.","source":"뉴스핌","url":"https://www.newspim.com/news/view/20261102000294"},
+   {"title":"11월 서울 입주전망 하락…\"잔금대출 부담 여전\"","summary":"10월 입주율은 65.0%였고 미입주 사유 1위는 잔금대출 미확보(45.8%)입니다. 11월 서울 입주 예정은 488가구에 그칩니다.","source":"파이낸셜뉴스","url":"https://www.fnnews.com/news/202611092119229001"}
+  ]},
+  {"id":"policy","name":"정부정책","color":"--policy","items":[
+   {"title":"공공재개발 사업 수수료 3%→1% 인하…약 130억원 부담 감소","summary":"내년 말까지 새로 신청하는 공공재개발 구역의 LH 사업수수료를 낮춥니다.","source":"정책브리핑","url":"https://www.korea.kr/news/policyNewsView.do?newsId=148975580"},
+   {"title":"충청권 메가프로젝트 첫 삽…8대 앵커기업 투자 가속","summary":"3개 사업 착공과 함께 인허가, 전력·용수, 인재 양성을 묶은 종합지원방안을 내놨습니다.","source":"정책브리핑","url":"https://www.korea.kr/news/policyNewsView.do?newsId=148975590"},
+   {"title":"은행지주 CEO 연임 문턱 높인다…주총 의결요건 단계 강화","summary":"임원추천위원회 독립성 강화, 연임 시 의결요건 상향, 성과보수 이연 확대가 담겼습니다.","source":"정책브리핑","url":"https://www.korea.kr/news/policyNewsView.do?newsId=148975582"},
+   {"title":"자율주행차·로봇 탑재 AI칩 10종, 2030년까지 개발","summary":"자동차·가전·로봇용 국산 온디바이스 AI반도체 로드맵입니다.","source":"정책브리핑","url":"https://www.korea.kr/news/policyNewsView.do?newsId=148975587"},
+   {"title":"\"미래 철도망 그림 국민과 함께\"…제5차 국가철도망 계획 13일 의견수렴","summary":"국토교통부가 2026~2035년 철도망 계획 고시에 앞서 서울 전문건설회관에서 의견을 듣습니다.","source":"서플","url":"https://supple.kr/news/cmw79xtx18ga9al9prnp34r7j"},
+   {"title":"EU 탄소국경조정제도 국내 첫 검증기관 인정…수출기업 부담 감소","summary":"한국표준협회가 EU CBAM 검증기관으로 인정받아 국내에서 배출량 검증이 가능해졌습니다.","source":"정책브리핑","url":"https://www.korea.kr/news/policyNewsView.do?newsId=148975558"}
+  ]}
+ ]
+}
+</script>
+<script>
+(function(){
+  var data = JSON.parse(document.getElementById('news').textContent);
+  var secs = data.sections;
+  var d = data.date.split('-');
+  var dateText = d[0]+'.'+d[1]+'.'+d[2]+' ('+data.weekday+')';
+  document.getElementById('date').textContent = dateText;
+
+  function el(tag, cls, text){var e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e;}
+  function colorOf(s){return 'var('+s.color+')';}
+
+  /* 전체 화면: 2×2 분야판 */
+  var grid = document.getElementById('grid');
+  secs.forEach(function(s){
+    var card = el('section','card'); card.style.setProperty('--c',colorOf(s));
+    card.addEventListener('click',function(e){ if(!e.target.closest('a')) location.hash = s.id; });
+    var head = el('div','card-head');
+    head.appendChild(el('h2',null,s.name));
+    head.appendChild(el('span','n',s.items.length+'건'));
+    var go = el('a','go','자세히 보기 →'); go.href='#'+s.id; head.appendChild(go);
+    card.appendChild(head);
+
+    var lead = el('a','lead'); lead.href='#'+s.id+'-1';
+    lead.appendChild(el('h3',null,s.items[0].title));
+    lead.appendChild(el('p',null,s.items[0].summary));
+    card.appendChild(lead);
+
+    var ul = el('ul','heads');
+    s.items.slice(1).forEach(function(it,i){
+      var li = el('li'); var a = el('a',null,it.title); a.href='#'+s.id+'-'+(i+2); a.title=it.title;
+      li.appendChild(a); ul.appendChild(li);
+    });
+    card.appendChild(ul);
+    var more = el('div','more'); more.hidden = true; card.appendChild(more);
+    grid.appendChild(card);
+  });
+
+  /* 칸에 다 안 들어가는 제목은 숨기고 "+N건 더"로 표시 */
+  function fit(){
+    Array.prototype.forEach.call(grid.children,function(card){
+      var ul = card.querySelector('.heads'), more = card.querySelector('.more');
+      var lis = ul.children; var hiddenN = 0;
+      Array.prototype.forEach.call(lis,function(li){li.hidden=false;});
+      more.hidden = true;
+      var bottom = ul.getBoundingClientRect().bottom;
+      for(var i=lis.length-1;i>=0;i--){
+        if(lis[i].getBoundingClientRect().bottom > bottom + 1){ lis[i].hidden = true; hiddenN++; }
+      }
+      if(hiddenN){
+        more.textContent = '+ '+hiddenN+'건 더 · 자세히 보기에서 확인';
+        more.hidden = false;
+        bottom = ul.getBoundingClientRect().bottom;
+        for(var j=lis.length-1;j>=0;j--){
+          if(!lis[j].hidden && lis[j].getBoundingClientRect().bottom > bottom + 1){ lis[j].hidden = true; hiddenN++; }
+        }
+        more.textContent = '+ '+hiddenN+'건 더 · 자세히 보기에서 확인';
+      }
+    });
+  }
+
+  /* 상세 화면 */
+  var detail = document.getElementById('detail'), overview = document.getElementById('overview');
+  var dnav = document.getElementById('dnav'), dmain = document.getElementById('dmain');
+  var back = el('a','btn back','← 전체'); back.href='#'; dnav.appendChild(back);
+  dnav.appendChild(el('span','sep'));
+  var navBtns = {};
+  secs.forEach(function(s){
+    var b = el('a','btn',s.name); b.href='#'+s.id; b.style.setProperty('--c',colorOf(s));
+    navBtns[s.id]=b; dnav.appendChild(b);
+  });
+
+  function renderDetail(s, focusIdx){
+    dmain.style.setProperty('--c',colorOf(s));
+    dmain.textContent='';
+    var head = el('div','dhead');
+    head.appendChild(el('h2',null,s.name));
+    head.appendChild(el('span',null,dateText+' · '+s.items.length+'건'));
+    dmain.appendChild(head);
+    var list = el('div','items');
+    s.items.forEach(function(it,i){
+      var a = el('article', i===0?'top':null); a.id = s.id+'-'+(i+1);
+      if(focusIdx===i+1) a.classList.add('focus');
+      a.appendChild(el('h3',null,it.title));
+      a.appendChild(el('p',null,it.summary));
+      var m = el('div','meta');
+      m.appendChild(el('span','tag',it.source));
+      var link = el('a',null,'원문 보기 ↗'); link.href=it.url; link.target='_blank'; link.rel='noopener';
+      m.appendChild(link); a.appendChild(m); list.appendChild(a);
+    });
+    dmain.appendChild(list);
+    dmain.appendChild(el('p','dfoot','요약은 각 언론사 보도를 바탕으로 정리했습니다. 수치와 세부 내용은 원문에서 확인하세요. · 마지막 업데이트 '+data.updated));
+    Object.keys(navBtns).forEach(function(k){
+      if(k===s.id) navBtns[k].setAttribute('aria-current','page'); else navBtns[k].removeAttribute('aria-current');
+    });
+  }
+
+  function route(){
+    var h = location.hash.replace('#','');
+    var m = h.match(/^([a-z]+)(?:-(\d+))?$/);
+    var s = m && secs.filter(function(x){return x.id===m[1];})[0];
+    if(s){
+      var idx = m[2] ? parseInt(m[2],10) : 0;
+      renderDetail(s, idx);
+      overview.hidden = true; detail.hidden = false;
+      document.documentElement.classList.remove('ov');
+      if(idx){ var t=document.getElementById(s.id+'-'+idx); if(t) t.scrollIntoView({block:'start'}); }
+      else window.scrollTo(0,0);
+    } else {
+      detail.hidden = true; overview.hidden = false;
+      document.documentElement.classList.add('ov');
+      window.scrollTo(0,0);
+      fit();
+    }
+  }
+  window.addEventListener('hashchange',route);
+  window.addEventListener('resize',function(){ if(!overview.hidden) fit(); });
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ if(!overview.hidden) fit(); });
+  route();
+})();
+</script>
+
+</body>
+</html>
